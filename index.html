@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Hebat - MPLS SLB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Nunito', sans-serif; background-color: #F0F9FF; overflow: hidden; touch-action: manipulation; }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.05); } 70% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
+        .anim-pop-in { animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+        .anim-heartbeat { animation: heartbeat 1.8s infinite ease-in-out; }
+        .btn-jawaban { transition: all 0.15s; box-shadow: 0 10px 0 #0284c7; }
+        .btn-jawaban:active { transform: translateY(10px); box-shadow: 0 0px 0 #0284c7; }
+        @keyframes shake { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 10% { transform: translate(-8px, -5px) rotate(-3deg); } 20% { transform: translate(8px, 5px) rotate(3deg); } 30% { transform: translate(-10px, 8px) rotate(-4deg); } 40% { transform: translate(10px, -8px) rotate(4deg); } 50% { transform: translate(-8px, 5px) rotate(-2deg); } 60% { transform: translate(8px, -5px) rotate(2deg); } 70% { transform: translate(-5px, -5px) rotate(-1deg); } 80% { transform: translate(5px, 5px) rotate(1deg); } 90% { transform: translate(-2px, 2px) rotate(0deg); } }
+        .apply-shake { animation: shake 0.6s ease-in-out; }
+        @keyframes terbang { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.08); } }
+        .anim-terbang { animation: terbang 1.8s infinite ease-in-out; }
+    </style>
+</head>
+<body id="main-body" class="h-screen w-full flex flex-col items-center justify-center relative select-none">
+
+    <div id="start-screen" class="w-full h-full flex flex-col items-center justify-center p-6 text-center absolute top-0 left-0 z-40 bg-sky-100">
+        <!-- Video Latar Belakang -->
+        <video id="bg-video" autoplay muted loop playsinline preload="auto" class="absolute w-full h-full object-cover z-0 opacity-80" src="Orang-orang_di_festival_seni_202607131451.mp4">
+            Your browser does not support the video tag.
+        </video>
+        <div class="bg-white/95 backdrop-blur-md p-8 md:p-12 rounded-[2.5rem] border-4 border-sky-400 shadow-2xl max-w-2xl flex flex-col items-center anim-pop-in z-10">
+            <h1 class="text-4xl md:text-6xl font-black text-sky-600 mb-2 drop-shadow-md">Petualangan Hebat</h1>
+            <h2 class="text-2xl md:text-3xl font-bold text-pink-500 mb-2">Masa Pengenalan Lingkungan Sekolah</h2>
+            <h3 class="text-xl md:text-2xl font-bold text-gray-700 mb-8">SLB Negeri Surakarta</h3>
+            <button onclick="startGame()" class="anim-heartbeat bg-green-500 hover:bg-green-600 text-white text-3xl font-bold py-6 px-16 rounded-full shadow-[0_10px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-[10px] transition-all">▶️ MULAI</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="w-full h-full flex flex-col max-w-4xl mx-auto p-4 hidden z-10 relative justify-center">
+        <div class="flex justify-end mb-2">
+            <span class="bg-sky-100 text-sky-700 font-black px-4 py-1.5 rounded-full text-lg shadow-sm">Kegiatan <span id="current-q">1</span> dari <span id="total-q">25</span></span>
+        </div>
+        <div class="flex-grow flex flex-col items-center justify-center bg-white rounded-3xl p-4 shadow-md border-4 border-pink-200 text-center mb-6 relative overflow-hidden">
+            <div class="w-full h-full max-h-[65vh] rounded-2xl overflow-hidden border-4 border-sky-100 bg-black flex items-center justify-center">
+                <video id="game-video" loop playsinline class="w-full h-full object-cover"></video>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full pb-4">
+            <button id="btn-opt1" onclick="cekJawaban(0)" class="btn-jawaban bg-sky-500 hover:bg-sky-600 text-white text-3xl md:text-4xl font-black py-8 px-6 rounded-3xl w-full border-4 border-sky-300">Pilihan A</button>
+            <button id="btn-opt2" onclick="cekJawaban(1)" class="btn-jawaban bg-green-500 hover:bg-green-600 text-white text-3xl md:text-4xl font-black py-8 px-6 rounded-3xl w-full border-4 border-green-300">Pilihan B</button>
+        </div>
+    </div>
+
+    <div id="feedback-screen" class="w-full h-full flex flex-col items-center justify-center absolute top-0 left-0 z-50 hidden transition-opacity duration-300">
+        <div id="feedback-content" class="flex flex-col items-center text-center p-4">
+            <div id="feedback-icon" class="text-9xl mb-6">🌟</div>
+            <h1 id="feedback-text" class="text-5xl md:text-7xl font-black text-white drop-shadow-lg p-6 rounded-3xl">HEBAT SEKALI!</h1>
+        </div>
+    </div>
+
+    <div id="end-screen" class="w-full h-full flex flex-col items-center justify-center p-6 text-center absolute top-0 left-0 bg-white z-40 hidden">
+        <div class="text-9xl mb-8 anim-terbang">🏆</div>
+        <h1 class="text-5xl md:text-7xl font-black text-sky-600 mb-4 drop-shadow-md">PETUALANGAN SELESAI!</h1>
+        <button onclick="location.reload()" class="bg-pink-500 text-white text-3xl font-bold py-6 px-16 rounded-full shadow-[0_8px_0_#9d174d] active:shadow-[0_0px_0_#9d174d] active:translate-y-2 transition-all">🔄 MAIN LAGI</button>
+    </div>
+
+    <script>
+        let audioCtx, ambientOsc, ambientGain;
+        let isProcessing = false;
+        let currentIndex = 0;
+        let correctOptionIndex = 0;
+
+        const gameData = [
+            { videoSources: ["Child_in_wheelchair_playing_bocce_202607101648.mp4"], opts: ["Bola Bocce", "Menyanyi"], ans: 0 },
+            { videoSources: ["Children_playing_table_tennis_to…_202607101715.mp4"], opts: ["Menjahit", "Tenis Meja"], ans: 1 },
+            { videoSources: ["Children_playing_chess_in_classroom_202607101725.mp4"], opts: ["Catur", "Lari dan Lompat"], ans: 0 },
+            { videoSources: ["Anak_sekolah_olahraga_lari_loncat_202607101839.mp4"], opts: ["Membatik", "Lari dan Lompat"], ans: 1 },
+            { videoSources: ["Anak-anak_bermain_bulu_tangkis_202607101909.mp4"], opts: ["Bulu Tangkis", "Bermain Musik"], ans: 0 },
+            { videoSources: ["bikinkan_animasi_kartun_deti.mp4"], opts: ["Silat", "Membaca"], ans: 0 },
+            { videoSources: ["Anak-anak_kriya_kayu_workshop_se…_202607111639.mp4"], opts: ["Kriya Kayu", "Memasak"], ans: 0 },
+            { videoSources: ["Anak_sekolah_merangkai_manik-manik_202607111646.mp4"], opts: ["Membuat Suvenir", "Membaca"], ans: 0 },
+            { videoSources: ["Anak_sekolah_membatik_di_sekolah_202607111651.mp4"], opts: ["Membatik", "Mewarnai"], ans: 0 },
+            { videoSources: ["Anak-anak_menghias_kue_raksasa_202607111843.mp4"], opts: ["Tata Boga", "Lari"], ans: 0 },
+            { videoSources: ["Anak-anak_belajar_salon_di_sekolah_202607111849.mp4"], opts: ["Tata Rias/Salon", "Memasak"], ans: 0 },
+            { videoSources: ["Anak-anak_menjahit_di_ruang_jahit_202607111852.mp4"], opts: ["Menjahit", "Memancing"], ans: 0 },
+            { videoSources: ["tolong_bikinkan_video_yang_ani.mp4"], opts: ["Teknik Informatika", "Menjahit"], ans: 0 },
+            { videoSources: ["Bikinkan_video_animasi_kartun.mp4"], opts: ["Desain Grafis", "Menjahit"], ans: 0 },
+            { videoSources: ["Bikinkan_animasi_kartun_anak_a.mp4"], opts: ["Merangkai Bunga", "Olahraga"], ans: 0 },
+            { videoSources: ["bikinkan_video_animasi_anak_an.mp4"], opts: ["Menyanyi", "Olahraga"], ans: 0 },
+            { videoSources: ["bikinkan_video_animasi_anak_an (1).mp4"], opts: ["Melukis", "Menyanyi"], ans: 0 },
+            { videoSources: ["Anak-anak_tarian_dan_fashion_show_202607121313.mp4"], opts: ["Fashion Show dan Menari", "Membatik"], ans: 0 },
+            { videoSources: ["MTQ.mp4"], opts: ["Tilawah Al Qur'an", "Lari"], ans: 0 },
+            { videoSources: ["Pantomim.mp4"], opts: ["Pantomim", "Olahraga"], ans: 0 },
+            { videoSources: ["Karawitan.mp4"], opts: ["Karawitan", "Memasak"], ans: 0 },
+            { videoSources: ["Komik Strip.mp4"], opts: ["Komik Strip", "Menyanyi"], ans: 0 },
+            { videoSources: ["Pramuka.mp4"], opts: ["Pramuka", "Lari"], ans: 0 },
+            { videoSources: ["Kerohanian Kristen.mp4"], opts: ["Kerohanian Kristen", "Lari"], ans: 0 },
+            { videoSources: ["tolong_diperbaiki_posisi_duduk.mp4"], opts: ["Kerohanian Islam", "Bermain"], ans: 0 }
+        ];
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playWinnerSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            [261.63, 329.63, 392.00, 523.25].forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + (i * 0.15));
+                gainNode.gain.setValueAtTime(0.2, now + (i * 0.15));
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.15) + 0.5);
+                osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                osc.start(now + (i * 0.15)); osc.stop(now + (i * 0.15) + 0.5);
+            });
+        }
+
+        function playSurpriseSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+            gainNode.gain.setValueAtTime(0.4, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.5);
+        }
+
+        function startGame() {
+            initAudio();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const data = gameData[currentIndex];
+            document.getElementById('current-q').innerText = currentIndex + 1;
+            document.getElementById('total-q').innerText = gameData.length;
+            const video = document.getElementById('game-video');
+
+            video.muted = false; 
+            video.src = data.videoSources[0];
+            video.load();
+            video.play().catch(e => { video.muted = true; video.play(); });
+
+            let options = [...data.opts];
+            const correctText = data.opts[data.ans];
+            if (Math.random() > 0.5) options.reverse();
+            correctOptionIndex = options.indexOf(correctText);
+
+            document.getElementById('btn-opt1').innerText = `A. ${options[0]}`;
+            document.getElementById('btn-opt2').innerText = `B. ${options[1]}`;
+        }
+
+        function cekJawaban(selectedIndex) {
+            if (isProcessing) return;
+            isProcessing = true;
+            const isCorrect = (selectedIndex === correctOptionIndex);
+            
+            const feedbackScreen = document.getElementById('feedback-screen');
+            feedbackScreen.classList.remove('hidden');
+            
+            if (isCorrect) {
+                feedbackScreen.style.backgroundColor = 'rgba(255, 255, 255, 0.96)';
+                document.getElementById('feedback-icon').innerText = '🎉';
+                document.getElementById('feedback-text').innerText = 'HEBAT SEKALI!';
+                document.getElementById('feedback-text').className = "text-5xl md:text-7xl font-black text-green-500 drop-shadow-lg p-6 rounded-3xl";
+                playWinnerSound();
+                setTimeout(() => { feedbackScreen.classList.add('hidden'); nextQuestion(); }, 2000);
+            } else {
+                feedbackScreen.style.backgroundColor = 'rgba(254, 226, 226, 0.96)';
+                document.getElementById('feedback-icon').innerText = '🤪';
+                document.getElementById('feedback-text').innerText = 'Uuups! Coba Lagi!';
+                document.getElementById('feedback-text').className = "text-5xl md:text-7xl font-black text-red-500 drop-shadow-lg p-6 rounded-3xl";
+                playSurpriseSound();
+                document.getElementById('game-screen').classList.add('apply-shake');
+                setTimeout(() => { 
+                    feedbackScreen.classList.add('hidden');
+                    document.getElementById('game-screen').classList.remove('apply-shake');
+                    isProcessing = false; 
+                }, 2000);
+            }
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < gameData.length) {
+                isProcessing = false;
+                loadQuestion();
+            } else {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('end-screen').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
